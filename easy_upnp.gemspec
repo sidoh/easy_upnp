@@ -19,6 +19,14 @@ Gem::Specification.new do |gem|
 
   gem.add_development_dependency('rspec', [">= 2.0.0"])
 
-  # ensure the gem is built out of versioned files
-  gem.files = Dir['Rakefile', '{bin,lib,man,test,spec}/**/*', 'README*', 'LICENSE*'] & `git ls-files -z`.split("\0")
+  ignores  = File.readlines(".gitignore").grep(/\S+/).map(&:chomp)
+  dotfiles = %w[.gitignore]
+
+  all_files_without_ignores = Dir["**/*"].reject { |f|
+    File.directory?(f) || ignores.any? { |i| File.fnmatch(i, f) }
+  }
+
+  gem.files = (all_files_without_ignores + dotfiles).sort
+
+  gem.require_path = "lib" 
 end
