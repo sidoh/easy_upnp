@@ -74,7 +74,7 @@ module EasyUpnp
 
     def service_definition(urn)
       @service_definitions.
-          reject { |s| s[:st] == urn }.
+          reject { |s| s[:st] != urn }.
           first
     end
   end
