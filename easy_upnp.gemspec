@@ -10,7 +10,7 @@ Gem::Specification.new do |gem|
 
   gem.authors  = ['Christopher Mullins']
   gem.email    = 'chris@sidoh.org'
-  gem.homepage = 'http://github.com/sidoh/easy-upnp'
+  gem.homepage = 'http://github.com/sidoh/easy_upnp'
 
   gem.add_dependency 'rake' 
   gem.add_dependency 'savon', '~> 2.11.1'
