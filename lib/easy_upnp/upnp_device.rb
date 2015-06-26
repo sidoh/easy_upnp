@@ -28,6 +28,10 @@ module EasyUpnp
       end
     end
 
+    def all_services
+      @service_definitions.map { |x| x[:st] }
+    end
+
     def has_service?(urn)
       !service_definition(urn).nil?
     end
