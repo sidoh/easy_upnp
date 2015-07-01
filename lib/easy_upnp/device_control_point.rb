@@ -6,9 +6,10 @@ module EasyUpnp
   class DeviceControlPoint
     attr_reader :service_methods
 
-    def initialize(client, service_type, definition_url)
+    def initialize(client, service_type, definition_url, options)
       @client = client
       @service_type = service_type
+      @options = options
 
       service_methods = []
       definition = Nokogiri::XML(open(definition_url))
@@ -49,8 +50,8 @@ module EasyUpnp
             soap_action: "#{@service_type}##{action_name}",
             attributes: {
                 :'xmlns:u' => @service_type
-            }
-        }
+            },
+        }.merge(@options)
 
         response = @client.call action['name'], attrs do
           message(args_hash)

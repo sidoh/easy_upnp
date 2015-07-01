@@ -36,7 +36,7 @@ module EasyUpnp
       !service_definition(urn).nil?
     end
 
-    def service(urn)
+    def service(urn, options = {})
       definition = service_definition(urn)
 
       if !definition.nil?
@@ -67,7 +67,7 @@ module EasyUpnp
             c.env_namespace :s
           end
 
-          DeviceControlPoint.new client, urn, wsdl
+          DeviceControlPoint.new client, urn, wsdl, options
         end
       end
     end
