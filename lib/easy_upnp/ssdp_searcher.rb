@@ -50,7 +50,7 @@ module EasyUpnp
       begin
         Timeout::timeout(option :timeout) do
           loop do
-            raw_messages.push send_socket.recv(4196)
+            raw_messages.push(send_socket.recv(4196))
           end
         end
       rescue Timeout::Error
@@ -84,17 +84,19 @@ ST: #{urn}\r
 
     def parse_message message
       lines = message.split "\r\n"
-      headers = lines[1...-1].map do |line|
-        header, value = line.match(/([^:]+):\s?(.*)/i).captures
+      headers = lines.map do |line|
+        if !(match = line.match(/([^:]+):\s?(.*)/i)).nil?
+          header, value = match.captures
+          key = header.
+              downcase.
+              gsub('-', '_').
+              to_sym
 
-        key = header.
-            downcase.
-            gsub('-', '_').
-            to_sym
-
-        [key, value]
+          [key, value]
+        end
       end
-      Hash[headers]
+
+      Hash[headers.reject(&:nil?)]
     end
 
     private
