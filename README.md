@@ -45,7 +45,7 @@ device.all_services
 You can then create a service client and make calls to the service:
 
 ```ruby
-service = service = device.service 'urn:schemas-upnp-org:service:ContentDirectory:1'
+service = device.service 'urn:schemas-upnp-org:service:ContentDirectory:1'
 
 service.service_methods
 # => ["GetSearchCapabilities", "GetSortCapabilities", "GetSystemUpdateID", "Browse", "Search"]
