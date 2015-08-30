@@ -7,11 +7,10 @@ require_relative 'device_control_point'
 
 module EasyUpnp
   class UpnpDevice
-    attr_reader :uuid
+    attr_reader :uuid, :name, :host
 
     def initialize uuid, messages
       @uuid = uuid
-
       @service_definitions = messages.
           # Filter out messages that aren't service definitions. These include
           # the root device and the root UUID
@@ -21,11 +20,19 @@ module EasyUpnp
           group_by { |message| message[:st] }.
           map { |_, matching_messages| matching_messages.first }.
           map do |message|
-        {
-            :location => message[:location],
-            :st => message[:st]
-        }
-      end
+            {
+                :location => message[:location],
+                :st => message[:st]
+            }
+          end
+
+      # Download one of the definitions to get the name of this device
+      service_location = @service_definitions.first[:location]
+
+      xml = Nokogiri::XML(open(service_location))
+      xml.remove_namespaces!
+      @name = xml.xpath('//device/friendlyName').text
+      @host = URI.parse(service_location).host
     end
 
     def all_services
