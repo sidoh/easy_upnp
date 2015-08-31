@@ -111,7 +111,7 @@ ST: #{urn}\r
       socket.setsockopt(:SOL_SOCKET, :SO_REUSEADDR, true)
       socket.setsockopt(:IPPROTO_IP, :IP_TTL, 1)
 
-      socket.bind(option(:bind_addr), MULTICAST_PORT)
+      socket.bind(option(:bind_addr), 0)
 
       socket
     end
@@ -126,4 +126,4 @@ ST: #{urn}\r
       socket
     end
   end
-  end
+end
