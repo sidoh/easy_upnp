@@ -27,12 +27,17 @@ module EasyUpnp
           end
 
       # Download one of the definitions to get the name of this device
-      service_location = @service_definitions.first[:location]
+      if @service_definitions.any?
+        service_location = @service_definitions.first[:location]
 
-      xml = Nokogiri::XML(open(service_location))
-      xml.remove_namespaces!
-      @name = xml.xpath('//device/friendlyName').text
-      @host = URI.parse(service_location).host
+        xml = Nokogiri::XML(open(service_location))
+        xml.remove_namespaces!
+        @name = xml.xpath('//device/friendlyName').text
+        @host = URI.parse(service_location).host
+      else
+        @name = 'UNKNOWN'
+        @host = 'UNKNOWN'
+      end
     end
 
     def all_services
