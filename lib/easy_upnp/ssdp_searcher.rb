@@ -10,8 +10,6 @@ module EasyUpnp
     MULTICAST_PORT = 1900
 
     DEFAULT_OPTIONS = {
-        :bind_addr => '0.0.0.0',
-
         # Number of seconds to wait for responses
         :timeout => 2,
 
@@ -35,13 +33,12 @@ module EasyUpnp
     end
 
     def search urn
-      listen_socket = build_listen_socket
-      send_socket = build_send_socket
+      socket = build_socket
       packet = construct_msearch_packet(urn)
 
       # Send M-SEARCH packet over UDP socket
       option(:repeat_queries).times do
-        send_socket.send packet, 0, MULTICAST_ADDR, MULTICAST_PORT
+        socket.send packet, 0, MULTICAST_ADDR, MULTICAST_PORT
       end
 
       raw_messages = []
@@ -50,14 +47,13 @@ module EasyUpnp
       begin
         Timeout::timeout(option :timeout) do
           loop do
-            raw_messages.push(send_socket.recv(4196))
+            raw_messages.push(socket.recv(4196))
           end
         end
       rescue Timeout::Error
         # This is expected
       ensure
-        send_socket.close
-        listen_socket.close
+        socket.close
       end
 
       # Parse messages (extract HTTP headers)
@@ -101,22 +97,7 @@ ST: #{urn}\r
 
     private
 
-    def build_listen_socket
-      socket = UDPSocket.new
-      socket.do_not_reverse_lookup = true
-
-      membership = IPAddr.new(MULTICAST_ADDR).hton + IPAddr.new(option :bind_addr).hton
-
-      socket.setsockopt(:IPPROTO_IP, :IP_ADD_MEMBERSHIP, membership)
-      socket.setsockopt(:SOL_SOCKET, :SO_REUSEADDR, true)
-      socket.setsockopt(:IPPROTO_IP, :IP_TTL, 1)
-
-      socket.bind(option(:bind_addr), 0)
-
-      socket
-    end
-
-    def build_send_socket
+    def build_socket
       socket = UDPSocket.open
       socket.do_not_reverse_lookup = true
 
