@@ -62,7 +62,7 @@ module EasyUpnp
           raise RuntimeError.new "Couldn't find service with urn: #{urn}"
         else
           service = Nokogiri::XML(service.to_xml)
-          wsdl = URI.join(root_uri, service.xpath('service/SCPDURL').text).to_s
+          service_definition = URI.join(root_uri, service.xpath('service/SCPDURL').text).to_s
 
           client = Savon.client do |c|
             c.endpoint URI.join(root_uri, service.xpath('service/controlURL').text).to_s
@@ -79,7 +79,7 @@ module EasyUpnp
             c.env_namespace :s
           end
 
-          DeviceControlPoint.new client, urn, wsdl, options
+          DeviceControlPoint.new(client, urn, service_definition, options)
         end
       end
     end
