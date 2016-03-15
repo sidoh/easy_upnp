@@ -8,6 +8,7 @@ module EasyUpnp
 
     def initialize(urn, service_endpoint, definition, options)
       @urn = urn
+      @service_endpoint = service_endpoint
       @options = options
       @definition = definition
 
@@ -36,6 +37,24 @@ module EasyUpnp
       @service_methods = service_methods
     end
 
+    def to_params
+      {
+        urn: @urn,
+        service_endpoint: @service_endpoint,
+        definition: @definition,
+        options: @options
+      }
+    end
+
+    def self.from_params(params)
+      DeviceControlPoint.new(
+          params[:urn],
+          params[:service_endpoint],
+          params[:definition],
+          params[:options]
+      )
+    end
+
     def self.from_service_definition(definition, options = {})
       urn = definition[:st]
       root_uri = definition[:location]
@@ -50,7 +69,7 @@ module EasyUpnp
       else
         service = Nokogiri::XML(service.to_xml)
         service_definition_uri = URI.join(root_uri, service.xpath('service/SCPDURL').text).to_s
-        service_definition = open(service_definition_uri)
+        service_definition = open(service_definition_uri) { |f| f.read }
 
         DeviceControlPoint.new(
             urn,
