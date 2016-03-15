@@ -9,7 +9,7 @@ module EasyUpnp
   class UpnpDevice
     attr_reader :uuid, :name, :host
 
-    def initialize uuid, messages
+    def initialize(uuid, messages)
       @uuid = uuid
       @service_definitions = messages.
           # Filter out messages that aren't service definitions. These include
