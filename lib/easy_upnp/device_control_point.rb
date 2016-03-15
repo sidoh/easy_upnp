@@ -6,20 +6,59 @@ module EasyUpnp
   class DeviceControlPoint
     attr_reader :service_methods
 
-    def initialize(client, service_type, definition_url, options)
-      @client = client
-      @service_type = service_type
+    def initialize(urn, service_endpoint, definition, options)
+      @urn = urn
       @options = options
+      @definition = definition
+
+      @client = Savon.client do |c|
+        c.endpoint service_endpoint
+        c.namespace urn
+
+        # I found this was necessary on some of my UPnP devices (namely, a Sony TV).
+        c.namespaces({:'s:encodingStyle' => "http://schemas.xmlsoap.org/soap/encoding/"})
+
+        # This makes XML tags be like <ObjectID> instead of <objectID>.
+        c.convert_request_keys_to :camelcase
+
+        c.namespace_identifier :u
+        c.env_namespace :s
+      end
+
+      definition_xml = Nokogiri::XML(definition)
+      definition_xml.remove_namespaces!
 
       service_methods = []
-      definition = Nokogiri::XML(open(definition_url))
-      definition.remove_namespaces!
-
-      definition.xpath('//actionList/action').map do |action|
+      definition_xml.xpath('//actionList/action').map do |action|
         service_methods.push define_action(action)
       end
 
       @service_methods = service_methods
+    end
+
+    def self.from_service_definition(definition, options = {})
+      urn = definition[:st]
+      root_uri = definition[:location]
+
+      xml = Nokogiri::XML(open(root_uri))
+      xml.remove_namespaces!
+
+      service = xml.xpath("//device/serviceList/service[serviceType=\"#{urn}\"]").first
+
+      if service.nil?
+        raise RuntimeError.new "Couldn't find service with urn: #{urn}"
+      else
+        service = Nokogiri::XML(service.to_xml)
+        service_definition_uri = URI.join(root_uri, service.xpath('service/SCPDURL').text).to_s
+        service_definition = open(service_definition_uri)
+
+        DeviceControlPoint.new(
+            urn,
+            URI.join(root_uri, service.xpath('service/controlURL').text).to_s,
+            service_definition,
+            options
+        )
+      end
     end
 
     private
@@ -47,9 +86,9 @@ module EasyUpnp
         end
 
         attrs = {
-            soap_action: "#{@service_type}##{action_name}",
+            soap_action: "#{@urn}##{action_name}",
             attributes: {
-                :'xmlns:u' => @service_type
+                :'xmlns:u' => @urn
             },
         }.merge(@options)
 

@@ -45,35 +45,7 @@ module EasyUpnp
       definition = service_definition(urn)
 
       if !definition.nil?
-        root_uri = definition[:location]
-        xml = Nokogiri::XML(open(root_uri))
-        xml.remove_namespaces!
-
-        service = xml.xpath("//device/serviceList/service[serviceType=\"#{urn}\"]").first
-
-        if service.nil?
-          raise RuntimeError.new "Couldn't find service with urn: #{urn}"
-        else
-          service = Nokogiri::XML(service.to_xml)
-          service_definition = URI.join(root_uri, service.xpath('service/SCPDURL').text).to_s
-
-          client = Savon.client do |c|
-            c.endpoint URI.join(root_uri, service.xpath('service/controlURL').text).to_s
-
-            c.namespace urn
-
-            # I found this was necessary on some of my UPnP devices (namely, a Sony TV).
-            c.namespaces({:'s:encodingStyle' => "http://schemas.xmlsoap.org/soap/encoding/"})
-
-            # This makes XML tags be like <ObjectID> instead of <objectID>.
-            c.convert_request_keys_to :camelcase
-
-            c.namespace_identifier :u
-            c.env_namespace :s
-          end
-
-          DeviceControlPoint.new(client, urn, service_definition, options)
-        end
+        DeviceControlPoint.from_service_definition(definition, options)
       end
     end
 
