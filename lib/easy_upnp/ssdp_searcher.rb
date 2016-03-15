@@ -63,7 +63,7 @@ module EasyUpnp
       # and create UpnpDevices for them. This wrap the services advertized by the SSDP
       # results.
       parsed_messages.reject { |x| !x[:usn] }.group_by { |x| x[:usn].split('::').first }.map do |k, v|
-        UpnpDevice.new k, v
+        UpnpDevice.from_ssdp_messages(k, v)
       end
     end
 

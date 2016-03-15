@@ -9,9 +9,13 @@ module EasyUpnp
   class UpnpDevice
     attr_reader :uuid, :name, :host
 
-    def initialize(uuid, messages)
+    def initialize(uuid, service_definitions)
       @uuid = uuid
-      @service_definitions = messages.
+      @service_definitions = service_definitions
+    end
+
+    def self.from_ssdp_messages(uuid, messages)
+      service_definitions = messages.
           # Filter out messages that aren't service definitions. These include
           # the root device and the root UUID
           reject { |message| not message[:st].include? ':service:' }.
@@ -26,18 +30,7 @@ module EasyUpnp
             }
           end
 
-      # Download one of the definitions to get the name of this device
-      if @service_definitions.any?
-        service_location = @service_definitions.first[:location]
-
-        xml = Nokogiri::XML(open(service_location))
-        xml.remove_namespaces!
-        @name = xml.xpath('//device/friendlyName').text
-        @host = URI.parse(service_location).host
-      else
-        @name = 'UNKNOWN'
-        @host = 'UNKNOWN'
-      end
+      UpnpDevice.new(uuid, service_definitions)
     end
 
     def all_services
