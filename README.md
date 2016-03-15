@@ -53,3 +53,22 @@ service.service_methods
 service.GetSystemUpdateID
 # => {:Id=>"207"}
 ```
+
+## Static client construction
+
+After you've constructed a client (`DeviceControlPoint`), you probably don't want to have to use SSDP to construct it again the next time you use it. `DeviceControlPoint` is equipped with `#to_params` and `#from_params` methods to make this easy.
+
+Say you have a client called `client`. To dump it into a hash, do the following:
+
+```ruby
+params = client.to_params
+#=> {:urn=>"urn:schemas-upnp-org:service:ContentDirectory:1", :service_endpoint=>"http://10.133.8.11:8200/ctl/ContentDir", :definition=>"<?xml version=\"1.0\"?>\r\n<scpd xmlns=\"urn:schemas-upnp-org:service-1-0\">( ... clipped ... )</scpd>", :options=>{}}
+```
+
+We can then reconstruct a client from these params and use it normally:
+
+```ruby
+client = EasyUpnp::DeviceControlPoint.from_params(params)
+client.GetSystemUpdateID
+=> {:Id=>"258"}
+```
