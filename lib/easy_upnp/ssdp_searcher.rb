@@ -32,7 +32,7 @@ module EasyUpnp
       @options[key]
     end
 
-    def search urn
+    def search urn = 'ssdp:all'
       socket = build_socket
       packet = construct_msearch_packet(urn)
 
