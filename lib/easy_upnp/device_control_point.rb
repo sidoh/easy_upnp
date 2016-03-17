@@ -98,8 +98,11 @@ module EasyUpnp
       define_singleton_method(action['name']) do |args_hash = {}|
         if !args_hash.is_a? Hash
           raise RuntimeError.new "Input arg must be a hash"
-        elsif
-          (args_hash.keys - input_args).any?
+        end
+
+        args_hash = args_hash.inject({}) { |m,(k,v)| m[k.to_sym] = v; m }
+
+        if (args_hash.keys - input_args).any?
           raise RuntimeError.new "Unsupported arguments: #{(args_hash.keys - input_args)}." <<
                                      " Supported args: #{input_args}"
         end
