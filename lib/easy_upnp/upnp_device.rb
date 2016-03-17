@@ -33,6 +33,18 @@ module EasyUpnp
       UpnpDevice.new(uuid, service_definitions)
     end
 
+    def device_name
+      if all_services.empty?
+        raise RuntimeError, "Couldn't resolve device name because no endpoints are defined"
+      end
+
+      document = open(service_definition(all_services.first)[:location]) { |f| f.read }
+      xml = Nokogiri::XML(document)
+      xml.remove_namespaces!
+
+      xml.xpath("//device/friendlyName").text
+    end
+
     def all_services
       @service_definitions.map { |x| x[:st] }
     end
