@@ -12,7 +12,7 @@ Gem::Specification.new do |gem|
   gem.email    = 'chris@sidoh.org'
   gem.homepage = 'http://github.com/sidoh/easy_upnp'
 
-  gem.add_dependency 'rake' 
+  gem.add_dependency 'rake'
   gem.add_dependency 'savon', '~> 2.11.1'
   gem.add_dependency 'nori', '~> 2.6.0'
   gem.add_dependency 'nokogiri', '~> 1.6.6.2'
@@ -27,6 +27,7 @@ Gem::Specification.new do |gem|
   }
 
   gem.files = (all_files_without_ignores + dotfiles).sort
+  gem.executables = ["upnp-list"]
 
-  gem.require_path = "lib" 
+  gem.require_path = "lib"
 end
