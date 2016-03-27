@@ -4,7 +4,7 @@ require 'nori'
 
 module EasyUpnp
   class DeviceControlPoint
-    attr_reader :service_methods
+    attr_reader :service_methods, :service_endpoint
 
     def initialize(urn, service_endpoint, definition, options)
       @urn = urn
