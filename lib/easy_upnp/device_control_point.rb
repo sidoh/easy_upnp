@@ -2,6 +2,8 @@ require 'nokogiri'
 require 'open-uri'
 require 'nori'
 
+require_relative 'logger'
+
 module EasyUpnp
   class DeviceControlPoint
     attr_reader :service_methods, :service_endpoint
@@ -12,7 +14,7 @@ module EasyUpnp
       @options = options
       @definition = definition
 
-      @client = Savon.client do |c|
+      @client = Savon.client(log: EasyUpnp::Log.enabled?, log_level: EasyUpnp::Log.level) do |c|
         c.endpoint service_endpoint
         c.namespace urn
 
