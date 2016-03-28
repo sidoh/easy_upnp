@@ -72,3 +72,15 @@ client = EasyUpnp::DeviceControlPoint.from_params(params)
 client.GetSystemUpdateID
 => {:Id=>"258"}
 ```
+
+## Logging
+
+By default, logs will be printed to `$stdout` at the `:info` level. To change this behavior, you can use the following:
+
+```ruby
+# Disable logging
+EasyUpnp::Log.enabled = false
+
+# Change log level (only has an effect if logging is enabled)
+EasyUpnp::Log.level = :debug
+```
