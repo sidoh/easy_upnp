@@ -145,8 +145,9 @@ module EasyUpnp
             },
         }.merge(@call_options)
 
+        options = @options
         response = @client.call action['name'], attrs do
-          advanced_typecasting @options.advanced_typecasting
+          advanced_typecasting options.advanced_typecasting
           message(args_hash)
         end
 
