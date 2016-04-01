@@ -53,11 +53,11 @@ module EasyUpnp
       !service_definition(urn).nil?
     end
 
-    def service(urn, options = {})
+    def service(urn, options = {}, &block)
       definition = service_definition(urn)
 
       if !definition.nil?
-        DeviceControlPoint.from_service_definition(definition, options)
+        DeviceControlPoint.from_service_definition(definition, options, &block)
       end
     end
 

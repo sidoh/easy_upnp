@@ -8,11 +8,36 @@ module EasyUpnp
   class DeviceControlPoint
     attr_reader :service_methods, :service_endpoint
 
-    def initialize(urn, service_endpoint, definition, options)
+    class Options
+      DEFAULTS = {
+        advanced_typecasting: true
+      }
+
+      attr_reader :options
+
+      def initialize(o = {}, &block)
+        @options = o.merge(DEFAULTS)
+
+        @options.map do |k, v|
+          define_singleton_method(k) do
+            @options[k]
+          end
+
+          define_singleton_method("#{k}=") do |v|
+            @options[k] = v
+          end
+        end
+
+        block.call(self) unless block.nil?
+      end
+    end
+
+    def initialize(urn, service_endpoint, definition, call_options, &block)
       @urn = urn
       @service_endpoint = service_endpoint
-      @options = options
+      @call_options = call_options
       @definition = definition
+      @options = Options.new(&block)
 
       @client = Savon.client(log: EasyUpnp::Log.enabled?, log_level: EasyUpnp::Log.level) do |c|
         c.endpoint service_endpoint
@@ -44,7 +69,8 @@ module EasyUpnp
         urn: @urn,
         service_endpoint: @service_endpoint,
         definition: @definition,
-        options: @options
+        call_options: @call_options,
+        options: @options.options
       }
     end
 
@@ -53,11 +79,13 @@ module EasyUpnp
           params[:urn],
           params[:service_endpoint],
           params[:definition],
-          params[:options]
-      )
+          params[:call_options]
+      ) { |c|
+        params[:options].map { |k, v| c.options[k] = v }
+      }
     end
 
-    def self.from_service_definition(definition, options = {})
+    def self.from_service_definition(definition, call_options = {}, &block)
       urn = definition[:st]
       root_uri = definition[:location]
 
@@ -77,7 +105,8 @@ module EasyUpnp
             urn,
             URI.join(root_uri, service.xpath('service/controlURL').text).to_s,
             service_definition,
-            options
+            call_options,
+            &block
         )
       end
     end
@@ -114,9 +143,10 @@ module EasyUpnp
             attributes: {
                 :'xmlns:u' => @urn
             },
-        }.merge(@options)
+        }.merge(@call_options)
 
         response = @client.call action['name'], attrs do
+          advanced_typecasting @options.advanced_typecasting
           message(args_hash)
         end
 
