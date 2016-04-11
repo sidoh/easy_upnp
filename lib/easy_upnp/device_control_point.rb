@@ -12,7 +12,7 @@ module EasyUpnp
     class Options
       DEFAULTS = {
         advanced_typecasting: true,
-        validate_arguments: true
+        validate_arguments: false
       }
 
       attr_reader :options
@@ -186,6 +186,16 @@ module EasyUpnp
         if (args_hash.keys - input_args).any?
           raise RuntimeError.new "Unsupported arguments: #{(args_hash.keys - input_args)}." <<
                                      " Supported args: #{input_args}"
+        end
+
+        if @options.validate_arguments
+          args_hash.each { |k,v|
+            begin
+              arg_validator(action['name'], k).validate(v)
+            rescue ArgumentError => e
+              raise ArgumentError, "Invalid value for argument #{k}: #{e}"
+            end
+          }
         end
 
         attrs = {

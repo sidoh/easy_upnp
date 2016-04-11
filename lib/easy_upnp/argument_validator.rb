@@ -35,8 +35,8 @@ module EasyUpnp
       end
 
       def validate(value)
-        if !value.in?(@range)
-          raise ArgumentError "#{value} is not in allowed range of values: #{@range.inspect}"
+        if !@range.include?(value)
+          raise ArgumentError, "#{value} is not in allowed range of values: #{@range.inspect}"
         end
       end
     end
@@ -50,7 +50,7 @@ module EasyUpnp
 
       def validate(value)
         if !@allowed_values.include?(value)
-          raise ArgumentError "#{value} is not in list of allowed values: #{@allowed_values.inspect}"
+          raise ArgumentError, "#{value} is not in list of allowed values: #{@allowed_values.inspect}"
         end
       end
     end
@@ -71,6 +71,7 @@ module EasyUpnp
       # Inversion of RUBY_TYPE_TO_UPNP_TYPE.
       UPNP_TYPE_VALID_CLASSES = Hash[
         RUBY_TYPE_TO_UPNP_TYPE.map { |k,v|
+          k = Kernel.const_get(k)
           v.map { |x| [x, k] }
         }.reduce({}) { |a,i|
           Hash[i].each { |x,y| a[x] ||= []; a[x] << y }
@@ -86,7 +87,7 @@ module EasyUpnp
       end
 
       def validate(value)
-        if !@valid_classes.include?(value.class)
+        if !@valid_classes.any? { |x| value.is_a?(x) }
           raise ArgumentError, "#{value} is the wrong type. Should be one of: #{@valid_classes.inspect}"
         end
       end
@@ -98,11 +99,12 @@ module EasyUpnp
 
     def validate(value)
       @validators.each { |_, v| v.validate(value) }
+      true
     end
 
     def required_class
       return nil unless @validators[TypeValidator]
-      c = @validators[TypeValidator].allowed_classes
+      c = @validators[TypeValidator].valid_classes
       c.size == 1 ? c.first : c
     end
 
