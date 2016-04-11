@@ -3,6 +3,7 @@ require 'open-uri'
 require 'nori'
 
 require_relative 'logger'
+require_relative 'argument_validator'
 
 module EasyUpnp
   class DeviceControlPoint
@@ -10,7 +11,8 @@ module EasyUpnp
 
     class Options
       DEFAULTS = {
-        advanced_typecasting: true
+        advanced_typecasting: true,
+        validate_arguments: true
       }
 
       attr_reader :options
@@ -57,11 +59,29 @@ module EasyUpnp
       definition_xml.remove_namespaces!
 
       service_methods = []
+      service_methods_args = {}
       definition_xml.xpath('//actionList/action').map do |action|
-        service_methods.push define_action(action)
+        service_methods.push(define_action(action))
+
+        name = action.xpath('name').text
+        args = {}
+        action.xpath('argumentList/argument').map do |arg|
+          arg_name = arg.xpath('name').text
+          arg_ref = arg.xpath('relatedStateVariable').text
+          args[arg_name.to_sym] = arg_ref.to_sym
+        end
+        service_methods_args[name.to_sym] = args
+      end
+
+      arg_validators = {}
+      definition_xml.xpath('//serviceStateTable/stateVariable').map do |var|
+        name = var.xpath('name').text
+        arg_validators[name.to_sym] = extract_validators(var)
       end
 
       @service_methods = service_methods
+      @service_methods_args = service_methods_args
+      @arg_validators = arg_validators
     end
 
     def to_params
@@ -111,7 +131,37 @@ module EasyUpnp
       end
     end
 
+    def arg_validator(method, arg)
+      method_args = @service_methods_args[method.to_sym]
+      raise ArgumentError, "Unknown method: #{method}" if method_args.nil?
+
+      arg_ref = method_args[arg.to_sym]
+      raise ArgumentValidator, "Unknown argument: #{arg}" if arg_ref.nil?
+
+      @arg_validators[arg_ref]
+    end
+
     private
+
+    def extract_validators(var)
+      ArgumentValidator.build do |v|
+        v.type(var.xpath('dataType').text)
+
+        if (range = var.xpath('allowedValueRange')).any?
+          min = range.xpath('minimum').text
+          max = range.xpath('maximum').text
+          step = range.xpath('step')
+          step = step.any? ? step.text : 1
+
+          v.in_range(min.to_i, max.to_i, step.to_i)
+        end
+
+        if (list = var.xpath('allowedValueList')).any?
+          allowed_values = list.xpath('allowedValue').map { |x| x.text }
+          v.allowed_values(*allowed_values)
+        end
+      end
+    end
 
     def define_action(action)
       action = Nori.new.parse(action.to_xml)['action']
