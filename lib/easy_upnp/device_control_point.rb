@@ -136,7 +136,7 @@ module EasyUpnp
       raise ArgumentError, "Unknown method: #{method}" if method_args.nil?
 
       arg_ref = method_args[arg.to_sym]
-      raise ArgumentValidator, "Unknown argument: #{arg}" if arg_ref.nil?
+      raise ArgumentError, "Unknown argument: #{arg}" if arg_ref.nil?
 
       @arg_validators[arg_ref]
     end
