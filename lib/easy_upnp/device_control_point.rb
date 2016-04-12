@@ -68,7 +68,11 @@ module EasyUpnp
         action.xpath('argumentList/argument').map do |arg|
           arg_name = arg.xpath('name').text
           arg_ref = arg.xpath('relatedStateVariable').text
-          args[arg_name.to_sym] = arg_ref.to_sym
+          arg_dir = arg.xpath('direction').text
+
+          if direction == 'in'
+            args[arg_name.to_sym] = arg_ref.to_sym
+          end
         end
         service_methods_args[name.to_sym] = args
       end
