@@ -84,3 +84,38 @@ EasyUpnp::Log.enabled = false
 # Change log level (only has an effect if logging is enabled)
 EasyUpnp::Log.level = :debug
 ```
+
+## Validation
+
+Clients can validate the arguments passed to its methods. By default, this behavior is disabled. You can enable it when initializing a client:
+
+```ruby
+client = device.service('urn:schemas-upnp-org:service:ContentDirectory:1') do |o|
+  o.validate_arguments = true
+end
+```
+
+This enables type checking in addition to whatever validation information is available in the UPnP service's definition. For example:
+
+```ruby
+client.GetVolume(InstanceID: '0', Channel: 'Master')
+#: ArgumentError: Invalid value for argument InstanceID: 0 is the wrong type. Should be one of: [Integer]
+client.GetVolume(InstanceID: 0, Channel: 'Master2')
+#: ArgumentError: Invalid value for argument Channel: Master2 is not in list of allowed values: ["Master"]
+client.GetVolume(InstanceID: 0, Channel: 'Master')
+#=> {:CurrentVolume=>"32"}
+```
+
+It's also possible to retrieve information about arguments:
+
+```ruby
+client.method_args(:SetVolume)
+#=> [:InstanceID, :Channel, :DesiredVolume]
+validator = client.arg_validator(:SetVolume, :DesiredVolume)
+validator.required_class
+#=> Integer
+validator.valid_range
+#=> #<Enumerator: 0..100:step(1)>
+validator.validate(32)
+#=> true
+validator.validate(101)
