@@ -116,6 +116,14 @@ validator.required_class
 #=> Integer
 validator.valid_range
 #=> #<Enumerator: 0..100:step(1)>
+validator.valid_range.max
+#=> 100
 validator.validate(32)
 #=> true
 validator.validate(101)
+#: ArgumentError: 101 is not in allowed range of values: #<Enumerator: 0..100:step(1)>
+
+validator = client.arg_validator(:SetVolume, :Channel)
+validator.allowed_values
+#=> ["Master"]
+```
