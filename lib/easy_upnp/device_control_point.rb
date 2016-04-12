@@ -141,6 +141,13 @@ module EasyUpnp
       @arg_validators[arg_ref]
     end
 
+    def method_args(method)
+      method_args = @service_methods_args[method.to_sym]
+      raise ArgumentError, "Unknown method: #{method}" if method_args.nil?
+
+      method_args.keys
+    end
+
     private
 
     def extract_validators(var)
