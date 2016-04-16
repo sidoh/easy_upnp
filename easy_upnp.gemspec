@@ -13,11 +13,8 @@ Gem::Specification.new do |gem|
   gem.homepage = 'http://github.com/sidoh/easy_upnp'
 
   gem.add_dependency 'rake'
-  gem.add_dependency 'savon', '~> 2.11.1'
-  gem.add_dependency 'nori', '~> 2.6.0'
-  gem.add_dependency 'nokogiri', '~> 1.6.6.2'
-
-  gem.add_development_dependency('rspec', [">= 2.0.0"])
+  gem.add_dependency 'savon', '~> 2.11'
+  gem.add_dependency 'nokogiri', '~> 1.6'
 
   ignores  = File.readlines(".gitignore").grep(/\S+/).map(&:chomp)
   dotfiles = %w[.gitignore]

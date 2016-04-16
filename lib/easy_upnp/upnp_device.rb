@@ -3,7 +3,7 @@ require 'nokogiri'
 require 'open-uri'
 require 'savon'
 
-require_relative 'device_control_point'
+require_relative 'control_point/device_control_point'
 
 module EasyUpnp
   class UpnpDevice
@@ -34,15 +34,7 @@ module EasyUpnp
     end
 
     def device_name
-      if all_services.empty?
-        raise RuntimeError, "Couldn't resolve device name because no endpoints are defined"
-      end
-
-      document = open(service_definition(all_services.first)[:location]) { |f| f.read }
-      xml = Nokogiri::XML(document)
-      xml.remove_namespaces!
-
-      xml.xpath("//device/friendlyName").text
+      @device_name ||= fetch_device_name
     end
 
     def all_services
@@ -65,6 +57,20 @@ module EasyUpnp
       @service_definitions.
           reject { |s| s[:st] != urn }.
           first
+    end
+
+    private
+
+    def fetch_device_name
+      if all_services.empty?
+        raise RuntimeError, "Couldn't resolve device name because no endpoints are defined"
+      end
+
+      document = open(service_definition(all_services.first)[:location]) { |f| f.read }
+      xml = Nokogiri::XML(document)
+      xml.remove_namespaces!
+
+      xml.xpath("//device/friendlyName").text
     end
   end
 end

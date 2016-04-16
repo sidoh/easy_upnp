@@ -1,6 +1,7 @@
 require 'socket'
 require 'ipaddr'
 require 'timeout'
+
 require_relative 'upnp_device'
 
 module EasyUpnp
@@ -28,11 +29,11 @@ module EasyUpnp
       @options = DEFAULT_OPTIONS.merge options
     end
 
-    def option key
+    def option(key)
       @options[key]
     end
 
-    def search urn = 'ssdp:all'
+    def search(urn = 'ssdp:all')
       socket = build_socket
       packet = construct_msearch_packet(urn)
 
@@ -78,7 +79,7 @@ ST: #{urn}\r
       MSEARCH
     end
 
-    def parse_message message
+    def parse_message(message)
       lines = message.split "\r\n"
       headers = lines.map do |line|
         if !(match = line.match(/([^:]+):\s?(.*)/i)).nil?

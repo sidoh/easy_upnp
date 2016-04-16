@@ -121,5 +121,29 @@ module EasyUpnp
     def self.build(&block)
       Builder.new(&block).build
     end
+
+    def self.no_op
+      build
+    end
+
+    def self.from_xml(xml)
+      build do |v|
+        v.type(xml.xpath('dataType').text)
+
+        if (range = xml.xpath('allowedValueRange')).any?
+          min = range.xpath('minimum').text
+          max = range.xpath('maximum').text
+          step = range.xpath('step')
+          step = step.any? ? step.text : 1
+
+          v.in_range(min.to_i, max.to_i, step.to_i)
+        end
+
+        if (list = xml.xpath('allowedValueList')).any?
+          allowed_values = list.xpath('allowedValue').map { |x| x.text }
+          v.allowed_values(*allowed_values)
+        end
+      end
+    end
   end
 end
