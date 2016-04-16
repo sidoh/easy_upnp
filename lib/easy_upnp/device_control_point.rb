@@ -70,7 +70,7 @@ module EasyUpnp
           arg_ref = arg.xpath('relatedStateVariable').text
           arg_dir = arg.xpath('direction').text
 
-          if direction == 'in'
+          if arg_dir == 'in'
             args[arg_name.to_sym] = arg_ref.to_sym
           end
         end

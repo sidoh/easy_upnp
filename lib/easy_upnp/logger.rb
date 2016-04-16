@@ -5,7 +5,7 @@ module EasyUpnp
     end
 
     def self.enabled?
-      @enabled.nil? ? @enabled = true : @enabled
+      @enabled = true if @enabled.nil?
     end
 
     def self.level
