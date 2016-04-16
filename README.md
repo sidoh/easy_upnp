@@ -75,14 +75,19 @@ client.GetSystemUpdateID
 
 ## Logging
 
-By default, logs will be printed to `$stdout` at the `:info` level. To change this behavior, you can use the following:
+By default, logs will be printed to `$stdout` at the `:error` level. To change this behavior, you can use the following options when constructing a control point:
 
 ```ruby
-# Disable logging
-EasyUpnp::Log.enabled = false
+service = client.service(
+  'urn:schemas-upnp-org:service:ContentDirectory:1', 
+  log_enabled: true, 
+  log_level: :info
+)
 
-# Change log level (only has an effect if logging is enabled)
-EasyUpnp::Log.level = :debug
+service = client.service('urn:schemas-upnp-org:service:ContentDirectory:1') do |s|
+  s.log_enabled = true
+  s.log_level = :debug
+end
 ```
 
 ## Validation
