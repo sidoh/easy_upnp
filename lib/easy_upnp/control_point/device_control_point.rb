@@ -2,6 +2,8 @@ require 'nokogiri'
 require 'open-uri'
 require 'nori'
 
+require_relative '../options_base'
+
 require_relative 'validator_provider'
 require_relative 'client_wrapper'
 require_relative 'service_method'
@@ -10,7 +12,7 @@ module EasyUpnp
   class DeviceControlPoint
     attr_reader :event_vars, :service_endpoint, :events_endpoint
 
-    class Options
+    class Options < EasyUpnp::OptionsBase
       DEFAULTS = {
         advanced_typecasting: true,
         validate_arguments: false,
@@ -19,22 +21,8 @@ module EasyUpnp
         call_options: {}
       }
 
-      attr_reader :options
-
       def initialize(o = {}, &block)
-        @options = o.merge(DEFAULTS)
-
-        DEFAULTS.map do |k, v|
-          define_singleton_method(k) do
-            @options[k]
-          end
-
-          define_singleton_method("#{k}=") do |v|
-            @options[k] = v
-          end
-        end
-
-        block.call(self) unless block.nil?
+        super(o, DEFAULTS, &block)
       end
     end
 
