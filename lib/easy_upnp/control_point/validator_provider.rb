@@ -31,7 +31,7 @@ module EasyUpnp
       end
 
       class NoOpValidatorProvider
-        def validator(method, arg)
+        def validator(arg_ref)
           ArgumentValidator.no_op
         end
       end

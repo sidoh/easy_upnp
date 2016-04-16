@@ -24,8 +24,9 @@ module EasyUpnp
       end
 
       args_hash.each do |arg, val|
+        validator = validator_provider.validator(arg_reference(arg))
         begin
-          validator_provider.validator(arg_reference(arg)).validate(val)
+          validator.validate(val)
         rescue ArgumentError => e
           raise ArgumentError, "Invalid value for argument #{arg}: #{e}"
         end
