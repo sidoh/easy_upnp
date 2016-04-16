@@ -8,7 +8,7 @@ require_relative 'service_method'
 
 module EasyUpnp
   class DeviceControlPoint
-    attr_reader :service_endpoint
+    attr_reader :event_vars, :service_endpoint, :events_endpoint
 
     class Options
       DEFAULTS = {
@@ -38,9 +38,10 @@ module EasyUpnp
       end
     end
 
-    def initialize(urn, service_endpoint, definition, options, &block)
+    def initialize(urn, service_endpoint, events_endpoint, definition, options, &block)
       @urn = urn
       @service_endpoint = service_endpoint
+      @events_endpoint = events_endpoint
       @definition = definition
       @options = Options.new(options, &block)
 
@@ -66,12 +67,18 @@ module EasyUpnp
         # Adds a method to the class
         define_service_method(method, @client, @validator_provider, @options)
       end
+
+      @event_vars = definition_xml.
+        xpath('//serviceStateTable/stateVariable[@sendEvents = "yes"]/name').
+        map(&:text).
+        map(&:to_sym)
     end
 
     def to_params
       {
         urn: @urn,
         service_endpoint: @service_endpoint,
+        events_endpoint: @events_endpoint,
         definition: @definition,
         options: @options.options
       }
@@ -81,6 +88,7 @@ module EasyUpnp
       DeviceControlPoint.new(
           params[:urn],
           params[:service_endpoint],
+          params[:events_endpoint],
           params[:definition],
           params[:options]
       )
@@ -102,9 +110,14 @@ module EasyUpnp
         service_definition_uri = URI.join(root_uri, service.xpath('service/SCPDURL').text).to_s
         service_definition = open(service_definition_uri) { |f| f.read }
 
+        endpoint_url = ->(xpath) do
+          URI.join(root_uri, service.xpath(xpath).text).to_s
+        end
+
         DeviceControlPoint.new(
             urn,
-            URI.join(root_uri, service.xpath('service/controlURL').text).to_s,
+            endpoint_url.call('service/controlURL'),
+            endpoint_url.call('service/eventSubURL'),
             service_definition,
             options,
             &block
