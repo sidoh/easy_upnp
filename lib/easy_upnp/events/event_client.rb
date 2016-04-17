@@ -4,15 +4,14 @@ require_relative '../options_base'
 
 module EasyUpnp
   class EventClient
-    def initialize(events_endpoint, callback_url)
+    def initialize(events_endpoint)
       @events_endpoint = URI(events_endpoint)
-      @callback_url = callback_url
     end
 
-    def subscribe(timeout: 300)
+    def subscribe(callback, timeout: 300)
       req = SubscribeRequest.new(
         @events_endpoint,
-        @callback_url,
+        callback,
         timeout
       )
 
@@ -22,7 +21,7 @@ module EasyUpnp
         raise RuntimeError, "SID header not present in response: #{response.to_hash}"
       end
 
-      response['SID']
+      SubscribeResponse.new(response)
     end
 
     def unsubscribe(sid)
@@ -40,8 +39,10 @@ module EasyUpnp
         sid,
         timeout
       )
-      do_request(req)
-      true
+
+      response = do_request(req)
+
+      SubscribeResponse.new(response)
     end
 
     private
@@ -56,6 +57,17 @@ module EasyUpnp
         end
 
         return response
+      end
+    end
+
+    class SubscribeResponse
+      TIMEOUT_HEADER_REGEX = /Second-(\d+)/i
+
+      attr_reader :sid, :timeout
+
+      def initialize(request)
+        @sid = request['SID']
+        @timeout = TIMEOUT_HEADER_REGEX.match(request['TIMEOUT'])[1].to_i
       end
     end
 
