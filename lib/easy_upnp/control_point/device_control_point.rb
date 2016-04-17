@@ -163,8 +163,17 @@ module EasyUpnp
 
       options = EventConfigOptions.new(&block)
 
-      listener = EasyUpnp::HttpListener.new(callback: callback) do |c|
+      listener = EasyUpnp::HttpListener.new do |c|
         options.configure_http_listener.call(c)
+
+        # It'd be kinda weird if a user set this (since a callback is taken as
+        # an argument to the `on_event` method), but it'd be even weirder if
+        # we ignored it.
+        user_callback = c.callback
+        c.callback do |r|
+          user_callback.call(r) if user_callback
+          callback.call(r)
+        end
       end
 
       # exposing the URL as a lambda allows the subscription manager to get a
