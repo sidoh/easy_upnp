@@ -2,15 +2,21 @@ require 'nokogiri'
 require 'open-uri'
 require 'nori'
 
+require_relative '../options_base'
+
 require_relative 'validator_provider'
 require_relative 'client_wrapper'
 require_relative 'service_method'
 
+require_relative '../events/event_client'
+require_relative '../events/http_listener'
+require_relative '../events/subscription_manager'
+
 module EasyUpnp
   class DeviceControlPoint
-    attr_reader :service_endpoint
+    attr_reader :event_vars, :service_endpoint, :events_endpoint
 
-    class Options
+    class Options < EasyUpnp::OptionsBase
       DEFAULTS = {
         advanced_typecasting: true,
         validate_arguments: false,
@@ -19,30 +25,30 @@ module EasyUpnp
         call_options: {}
       }
 
-      attr_reader :options
-
       def initialize(o = {}, &block)
-        @options = o.merge(DEFAULTS)
-
-        DEFAULTS.map do |k, v|
-          define_singleton_method(k) do
-            @options[k]
-          end
-
-          define_singleton_method("#{k}=") do |v|
-            @options[k] = v
-          end
-        end
-
-        block.call(self) unless block.nil?
+        super(o, DEFAULTS, &block)
       end
     end
 
-    def initialize(urn, service_endpoint, definition, options, &block)
+    class EventConfigOptions < EasyUpnp::OptionsBase
+      DEFAULTS = {
+        configure_http_listener: ->(c) { },
+        configure_subscription_manager: ->(c) { }
+      }
+
+      def initialize(&block)
+        super({}, DEFAULTS, &block)
+      end
+    end
+
+    def initialize(urn, service_endpoint, events_endpoint, definition, options, &block)
       @urn = urn
       @service_endpoint = service_endpoint
       @definition = definition
       @options = Options.new(options, &block)
+
+      @events_endpoint = events_endpoint
+      @events_client = EasyUpnp::EventClient.new(events_endpoint)
 
       @client = ClientWrapper.new(
         service_endpoint,
@@ -66,12 +72,18 @@ module EasyUpnp
         # Adds a method to the class
         define_service_method(method, @client, @validator_provider, @options)
       end
+
+      @event_vars = definition_xml.
+        xpath('//serviceStateTable/stateVariable[@sendEvents = "yes"]/name').
+        map(&:text).
+        map(&:to_sym)
     end
 
     def to_params
       {
         urn: @urn,
         service_endpoint: @service_endpoint,
+        events_endpoint: @events_endpoint,
         definition: @definition,
         options: @options.options
       }
@@ -81,6 +93,7 @@ module EasyUpnp
       DeviceControlPoint.new(
           params[:urn],
           params[:service_endpoint],
+          params[:events_endpoint],
           params[:definition],
           params[:options]
       )
@@ -102,9 +115,14 @@ module EasyUpnp
         service_definition_uri = URI.join(root_uri, service.xpath('service/SCPDURL').text).to_s
         service_definition = open(service_definition_uri) { |f| f.read }
 
+        endpoint_url = ->(xpath) do
+          URI.join(root_uri, service.xpath(xpath).text).to_s
+        end
+
         DeviceControlPoint.new(
             urn,
-            URI.join(root_uri, service.xpath('service/controlURL').text).to_s,
+            endpoint_url.call('service/controlURL'),
+            endpoint_url.call('service/eventSubURL'),
             service_definition,
             options,
             &block
@@ -132,6 +150,39 @@ module EasyUpnp
 
     def service_methods
       @service_methods.keys
+    end
+
+    def add_event_callback(url)
+      manager = EasyUpnp::SubscriptionManager.new(@events_client, url)
+      manager.subscribe
+      manager
+    end
+
+    def on_event(callback, &block)
+      raise ArgumentError, 'Must provide block' if callback.nil?
+
+      options = EventConfigOptions.new(&block)
+
+      listener = EasyUpnp::HttpListener.new(callback: callback) do |c|
+        options.configure_http_listener.call(c)
+      end
+
+      # exposing the URL as a lambda allows the subscription manager to get a
+      # new URL should the server stop and start again on a different port.
+      url = ->() { listener.listen }
+
+      manager = EasyUpnp::SubscriptionManager.new(@events_client, url) do |c|
+        options.configure_subscription_manager.call(c)
+
+        user_shutdown = c.on_shutdown
+        c.on_shutdown = ->() do
+          user_shutdown.call if user_shutdown
+          listener.shutdown
+        end
+      end
+
+      manager.subscribe
+      manager
     end
 
     private
