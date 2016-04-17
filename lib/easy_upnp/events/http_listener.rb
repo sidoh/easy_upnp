@@ -1,4 +1,5 @@
 require 'webrick'
+require 'thread'
 
 require_relative '../options_base'
 
@@ -9,6 +10,10 @@ module EasyUpnp
         # Port to listen on. Default value "0" will cause OS to choose a random
         # ephemeral port
         listen_port: 0,
+
+        # Address to bind listener on. Default value binds to all IPv4
+        # interfaces.
+        bind_address: '0.0.0.0',
 
         # By default, event callback just prints the request body
         callback: ->(request) { puts request.body }
@@ -21,19 +26,34 @@ module EasyUpnp
 
     def initialize(o = {}, &block)
       @options = Options.new(o, &block)
-
-      @server = WEBrick::HTTPServer.new(
-        Port: @options.listen_port,
-        AccessLog: []
-      )
-      @server.mount('/', NotifyServlet, @options.callback)
     end
 
     def listen
+      if !@listen_thread
+        @server = WEBrick::HTTPServer.new(
+          Port: @options.listen_port,
+          AccessLog: [],
+          BindAddress: @options.bind_address
+        )
+        @server.mount('/', NotifyServlet, @options.callback)
+      end
+
       @listen_thread ||= Thread.new do
         @server.start
       end
-      true
+
+      url
+    end
+
+    def url
+      if !@listen_thread or !@server
+        raise RuntimeError, 'Server not started'
+      end
+
+      addr = Socket.ip_address_list.detect{|intf| intf.ipv4_private?}
+      port = @server.config[:Port]
+
+      "http://#{addr.ip_address}:#{port}"
     end
 
     def shutdown

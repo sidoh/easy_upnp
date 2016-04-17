@@ -8,6 +8,10 @@ require_relative 'validator_provider'
 require_relative 'client_wrapper'
 require_relative 'service_method'
 
+require_relative '../events/event_client'
+require_relative '../events/http_listener'
+require_relative '../events/subscription_manager'
+
 module EasyUpnp
   class DeviceControlPoint
     attr_reader :event_vars, :service_endpoint, :events_endpoint
@@ -29,9 +33,11 @@ module EasyUpnp
     def initialize(urn, service_endpoint, events_endpoint, definition, options, &block)
       @urn = urn
       @service_endpoint = service_endpoint
-      @events_endpoint = events_endpoint
       @definition = definition
       @options = Options.new(options, &block)
+
+      @events_endpoint = events_endpoint
+      @events_client = EasyUpnp::EventClient.new(events_endpoint)
 
       @client = ClientWrapper.new(
         service_endpoint,
@@ -133,6 +139,24 @@ module EasyUpnp
 
     def service_methods
       @service_methods.keys
+    end
+
+    def add_event_callback(url)
+      manager = EasyUpnp::SubscriptionManager.new(@events_client, url)
+      manager.start_subscription
+      manager
+    end
+
+    def on_event(&block)
+      raise ArgumentError, 'Must provide block' if block.nil?
+
+      listener = EasyUpnp::HttpListener.new(callback: block)
+      url = listener.listen
+      manager = EasyUpnp::SubscriptionManager.new(@events_client, url) do |c|
+        c.on_shutdown = ->() { listener.shutdown }
+      end
+      manager.start_subscription
+      manager
     end
 
     private

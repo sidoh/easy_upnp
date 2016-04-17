@@ -12,7 +12,9 @@ module EasyUpnp
       resubscription_interval_buffer: 10,
 
       logger: Logger.new($stdout),
-      log_level: Logger::WARN
+      log_level: Logger::WARN,
+
+      on_shutdown: -> { }
     }
 
     def initialize(o, &block)
@@ -64,7 +66,7 @@ module EasyUpnp
 
         logger.info "Ending subscription"
       end
-      
+
       true
     end
 
@@ -83,6 +85,8 @@ module EasyUpnp
       rescue Exception => e
         logger.error "Error unsubscribing with SID #{@sid}: #{e}"
       end
+
+      @options.on_shutdown.call
     end
 
     def calculate_refresh_time(response)
