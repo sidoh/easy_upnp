@@ -4,29 +4,25 @@ require_relative '../options_base'
 
 module EasyUpnp
   class EventClient
-    class Options < EasyUpnp::OptionsBase
-      DEFAULTS = {
-        timeout: 300
-      }
-
-      def initialize(options, &block)
-        super(options, DEFAULTS, &block)
-      end
-    end
-
-    def initialize(events_endpoint, callback_url, options = {}, &block)
-      @options = Options.new(options, &block)
+    def initialize(events_endpoint, callback_url)
       @events_endpoint = URI(events_endpoint)
       @callback_url = callback_url
     end
 
-    def subscribe
+    def subscribe(timeout: 300)
       req = SubscribeRequest.new(
         @events_endpoint,
         @callback_url,
-        @options.timeout
+        timeout
       )
-      do_request(req)['sid']
+
+      response = do_request(req)
+
+      if !response['SID']
+        raise RuntimeError, "SID header not present in response: #{response.to_hash}"
+      end
+
+      response['SID']
     end
 
     def unsubscribe(sid)
@@ -35,9 +31,17 @@ module EasyUpnp
         sid
       )
       do_request(req)
+      true
     end
 
-    def resubscribe
+    def resubscribe(sid, timeout: 300)
+      req = ResubscribeRequest.new(
+        @events_endpoint,
+        sid,
+        timeout
+      )
+      do_request(req)
+      true
     end
 
     private
@@ -45,14 +49,17 @@ module EasyUpnp
     def do_request(req)
       uri = URI(@events_endpoint)
       Net::HTTP.start(uri.host, uri.port) do |http|
-        puts req.inspect
-        puts req.to_hash
-        return http.request(req)
+        response = http.request(req)
+
+        if response.code.to_i != 200
+          raise RuntimeError, "Unexpected response type (#{response.code}): #{response.body}"
+        end
+
+        return response
       end
     end
 
     class EventRequest < Net::HTTPRequest
-
       def timeout=(v)
         self['TIMEOUT'] = "Second-#{v}"
       end
@@ -70,7 +77,7 @@ module EasyUpnp
     class ResubscribeRequest < EventRequest
       METHOD = 'SUBSCRIBE'
       REQUEST_HAS_BODY = false
-      RESPONSE_HAS_BODY = false
+      RESPONSE_HAS_BODY = true
 
       def initialize(event_url, sid, timeout)
         super(URI(event_url))
@@ -82,7 +89,7 @@ module EasyUpnp
     class SubscribeRequest < EventRequest
       METHOD = 'SUBSCRIBE'
       REQUEST_HAS_BODY = false
-      RESPONSE_HAS_BODY = false
+      RESPONSE_HAS_BODY = true
 
       def initialize(event_url, callback_url, timeout)
         super(URI(event_url))
@@ -94,7 +101,7 @@ module EasyUpnp
     class UnsubscribeRequest < EventRequest
       METHOD = 'UNSUBSCRIBE'
       REQUEST_HAS_BODY = false
-      RESPONSE_HAS_BODY = false
+      RESPONSE_HAS_BODY = true
 
       def initialize(event_url, sid)
         super(URI(event_url))
