@@ -132,3 +132,99 @@ validator = client.arg_validator(:SetVolume, :Channel)
 validator.allowed_values
 #=> ["Master"]
 ```
+
+## Events
+
+easy_upnp allows you to subscribe to events. UPnP events are supported by registering HTTP callbacks with services. You can read more about the specifics in Section 4 of the [UPnP Device Architecture document](http://upnp.org/specs/arch/UPnP-arch-DeviceArchitecture-v1.1.pdf). Using this you could, for example, receive events when the volume or mute state changes on your UPnP-enabled TV. You might see something like this HTTP request, for example:
+
+```
+NOTIFY / HTTP/1.1
+Host: 192.168.1.100:8888
+Date: Sun, 17 Apr 2016 07:40:01 GMT
+User-Agent: UPnP/1.0
+Content-Type: text/xml; charset="utf-8"
+Content-Length: 479
+NT: upnp:event
+NTS: upnp:propchange
+SID: uuid:9742fed0-046f-11e6-8000-fcf1524b4f9c
+SEQ: 0
+
+<?xml version="1.0"?><e:propertyset xmlns:e="urn:schemas-upnp-org:event-1-0"><e:property><LastChange>&lt;Event xmlns=&quot;urn:schemas-upnp-org:metadata-1-0/RCS/&quot;&gt;
+  &lt;InstanceID val=&quot;0&quot;&gt;
+    &lt;PresetNameList val=&quot;FactoryDefaults&quot;/&gt;
+    &lt;Mute val=&quot;0&quot; channel=&quot;Master&quot;/&gt;
+    &lt;Volume val=&quot;34&quot; channel=&quot;Master&quot;/&gt;
+  &lt;/InstanceID&gt;
+&lt;/Event&gt;
+</LastChange></e:property></e:propertyset>
+```
+
+There are two ways you can subscribe to events with easy_upnp:
+
+1. Registering a custom HTTP endpoint.
+2. Providing a callback `lambda` or `Proc` which is called each time an event is fired.
+
+In the case of (2), easy_upnp behind the scenes starts a WEBrick HTTP server, which calls the provided callback whenever it receives an HTTP `NOTIFY` request. 
+
+#### Calling URLs
+
+To add a URL to be called on events:
+
+```ruby
+# Registers the provided URL with the service. If everything works appropriately, this
+# URL will be called with HTTP NOTIFY requests from the service.
+manager = service.add_event_callback('http://myserver/path/to/callback')
+
+# The object that's returned allows you to manage the event subscription. To 
+# cancel the subscription, for example:
+manager.unsubscribe
+
+# You can also start the subscription after unsubscribing:
+manager.subscribe
+
+# Or get the subscription identifier:
+manager.subscription_id
+#=> "uuid:6ef254f0-04d1-11e6-8000-fcf1524b4f9c"
+```
+
+You can also construct a manager that attempts to manage an existing subscription:
+
+```ruby
+manager = service.add_event_callback('http://myserver/path/to/callback') do |c|
+  c.existing_sid = 'uuid:6ef254f0-04d1-11e6-8000-fcf1524b4f9c'
+end
+```
+
+#### Calling ruby code
+
+If you don't want to have to set up an HTTP endpoint to listen to events, you can have easy_upnp do it for you. The `on_event` starts an internal HTTP server on an ephemeral port behind the scenes and triggers the provided callback each time a request is recieved. 
+
+```ruby
+# Parse and print the XML body of the request
+callback = ->(request) { puts Nokogiri::XML(request.body).to_xml }
+manager = service.on_event(callback)
+
+# End the subscription and shut down the internal HTTP server
+manager.unsubscribe
+
+# This will start a new HTTP server and start a new subscription
+manager.subscribe
+```
+
+While the default configurations are probably fine for most situations, you can configure both the internal HTTP server and the subscription manager when you call `on_event` by passing a configuration block:
+
+```ruby
+manager = service.on_event(callback) do |c|
+  c.configure_http_listener do |l|
+    l.listen_port = 8888
+    l.bind_address = '192.168.1.100'
+  end
+  
+  c.configure_subscription_manager do |m|
+    m.requested_timeout = 1800
+    m.resubscription_interval_buffer = 60
+    m.existing_sid = 'uuid:6ef254f0-04d1-11e6-8000-fcf1524b4f9c'
+    m.log_level = Logger::INFO
+  end
+end
+```
