@@ -4,6 +4,8 @@ require_relative '../options_base'
 
 module EasyUpnp
   class EventClient
+    class SubscriptionError < StandardError; end
+
     def initialize(events_endpoint)
       @events_endpoint = URI(events_endpoint)
     end
@@ -18,7 +20,7 @@ module EasyUpnp
       response = do_request(req)
 
       if !response['SID']
-        raise RuntimeError, "SID header not present in response: #{response.to_hash}"
+        raise SubscriptionError, "SID header not present in response: #{response.to_hash}"
       end
 
       SubscribeResponse.new(response)
@@ -53,7 +55,7 @@ module EasyUpnp
         response = http.request(req)
 
         if response.code.to_i != 200
-          raise RuntimeError, "Unexpected response type (#{response.code}): #{response.body}"
+          raise SubscriptionError, "Unexpected response type (#{response.code}): #{response.body}"
         end
 
         return response

@@ -8,6 +8,10 @@ module EasyUpnp
 
         supported_options.each do |k|
           define_singleton_method("#{k}=") { |v| @options[k] = v }
+          define_singleton_method("#{k}") do |&block|
+            @options[k] = block if block
+            @options[k]
+          end
         end
       end
     end

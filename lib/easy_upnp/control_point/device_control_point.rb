@@ -30,6 +30,17 @@ module EasyUpnp
       end
     end
 
+    class EventConfigOptions < EasyUpnp::OptionsBase
+      DEFAULTS = {
+        configure_http_listener: ->(c) { },
+        configure_subscription_manager: ->(c) { }
+      }
+
+      def initialize(&block)
+        super({}, DEFAULTS, &block)
+      end
+    end
+
     def initialize(urn, service_endpoint, events_endpoint, definition, options, &block)
       @urn = urn
       @service_endpoint = service_endpoint
@@ -143,19 +154,34 @@ module EasyUpnp
 
     def add_event_callback(url)
       manager = EasyUpnp::SubscriptionManager.new(@events_client, url)
-      manager.start_subscription
+      manager.subscribe
       manager
     end
 
-    def on_event(&block)
-      raise ArgumentError, 'Must provide block' if block.nil?
+    def on_event(callback, &block)
+      raise ArgumentError, 'Must provide block' if callback.nil?
 
-      listener = EasyUpnp::HttpListener.new(callback: block)
-      url = listener.listen
-      manager = EasyUpnp::SubscriptionManager.new(@events_client, url) do |c|
-        c.on_shutdown = ->() { listener.shutdown }
+      options = EventConfigOptions.new(&block)
+
+      listener = EasyUpnp::HttpListener.new(callback: callback) do |c|
+        options.configure_http_listener.call(c)
       end
-      manager.start_subscription
+
+      # exposing the URL as a lambda allows the subscription manager to get a
+      # new URL should the server stop and start again on a different port.
+      url = ->() { listener.listen }
+
+      manager = EasyUpnp::SubscriptionManager.new(@events_client, url) do |c|
+        options.configure_subscription_manager.call(c)
+
+        user_shutdown = c.on_shutdown
+        c.on_shutdown = ->() do
+          user_shutdown.call if user_shutdown
+          listener.shutdown
+        end
+      end
+
+      manager.subscribe
       manager
     end
 

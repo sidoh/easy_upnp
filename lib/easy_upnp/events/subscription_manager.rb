@@ -3,13 +3,21 @@ require_relative '../options_base'
 module EasyUpnp
   class Options < EasyUpnp::OptionsBase
     DEFAULTS = {
+      ##
       # Number of seconds to request our event subscription be active for. The
       # server can set it to whatever it wants.
       requested_timeout: 300,
 
+      ##
       # Number of seconds before a subscription expires before we request that
       # it be refreshed.
       resubscription_interval_buffer: 10,
+
+      ##
+      # Specifies an existing subscription ID. If non-nil, will attempt to
+      # maintain the existing subscription, creating a new one if there's an
+      # error. If nil, will always create a new subscription.
+      existing_sid: nil,
 
       logger: Logger.new($stdout),
       log_level: Logger::WARN,
@@ -27,41 +35,40 @@ module EasyUpnp
       @options = Options.new(options, &block)
       @event_client = event_client
       @callback_url = callback_url
+      @sid = @options.existing_sid
 
       logger.level = @options.log_level
     end
 
-    def start_subscription
+    def subscription_id
+      @sid
+    end
+
+    def callback_url
+      if @callback_url.is_a? Proc
+        @callback_url.call
+      else
+        @callback_url
+      end
+    end
+
+    def subscribe
       @subscription_thread ||= Thread.new do
         logger.info "Starting subscription thread..."
 
+        resubscribe_time = start_or_renew_subscription
+
         begin
-          response = @event_client.subscribe(
-            @callback_url,
-            timeout: @options.requested_timeout
-          )
-        rescue Exception => e
-          logger.error "Error subscribing to event: #{e}"
-          raise e
-        end
-
-        resubscribe_time = calculate_refresh_time(response)
-        @sid = response.sid
-
-        logger.info "Got subscription response: #{response}"
-
-        while true
-          if Time.now >= resubscribe_time
-            logger.info "Refreshing subscription for: #{sid}"
-            response = @event_client.resubscribe(
-              @sid,
-              timeout: @options.requested_timeout
-            )
-            logger.info "Got resubscribe response: #{response}"
-            resubscribe_time = calculate_refresh_time(response)
-          else
-            sleep 1
+          while true
+            if Time.now >= resubscribe_time
+              resubscribe_time = renew_subscription
+            else
+              sleep 1
+            end
           end
+        rescue Exception => e
+          logger.error "Caught error: #{e}"
+          raise e
         end
 
         logger.info "Ending subscription"
@@ -70,7 +77,7 @@ module EasyUpnp
       true
     end
 
-    def end_subscription
+    def unsubscribe
       if @subscription_thread.nil?
         raise RuntimeError, "Illegal state: no active subscription"
       end
@@ -89,12 +96,55 @@ module EasyUpnp
       @options.on_shutdown.call
     end
 
+    private
+
+    def start_or_renew_subscription
+      if !@sid
+        start_subscription
+      else
+        renew_subscription
+      end
+    end
+
+    def renew_subscription
+      begin
+        logger.info "Refreshing subscription for: #{@sid}"
+        response = @event_client.resubscribe(
+          @sid,
+          timeout: @options.requested_timeout
+        )
+        logger.info "Got resubscribe response: #{response.inspect}"
+        @resubscribe_time = calculate_refresh_time(response)
+      rescue EasyUpnp::EventClient::SubscriptionError => e
+        logger.error "Error renewing subscription; trying to start a new one"
+        start_subscription
+      rescue Exception => e
+        logger.error "Unrecoverable exception renewing subscription: #{e}"
+        raise e
+      end
+    end
+
+    def start_subscription
+      begin
+        response = @event_client.subscribe(
+          callback_url,
+          timeout: @options.requested_timeout
+        )
+
+        logger.info "Got subscription response: #{response.inspect}"
+
+        @sid = response.sid
+        @resubscribe_time = calculate_refresh_time(response)
+      rescue Exception => e
+        logger.error "Error subscribing to event: #{e}"
+        raise e
+      end
+    end
+
     def calculate_refresh_time(response)
       timeout = response.timeout
       Time.now + timeout - @options.resubscription_interval_buffer
     end
-
-    private
 
     def logger
       @options.logger
