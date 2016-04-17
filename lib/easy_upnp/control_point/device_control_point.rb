@@ -152,8 +152,8 @@ module EasyUpnp
       @service_methods.keys
     end
 
-    def add_event_callback(url)
-      manager = EasyUpnp::SubscriptionManager.new(@events_client, url)
+    def add_event_callback(url, &block)
+      manager = EasyUpnp::SubscriptionManager.new(@events_client, url, &block)
       manager.subscribe
       manager
     end
