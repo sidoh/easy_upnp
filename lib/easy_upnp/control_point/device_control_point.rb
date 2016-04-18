@@ -53,10 +53,10 @@ module EasyUpnp
       @client = ClientWrapper.new(
         service_endpoint,
         urn,
-        call_options: @options.call_options,
-        advanced_typecasting: @options.advanced_typecasting,
-        log_enabled: @options.log_enabled,
-        log_level: @options.log_level
+        @options.call_options,
+        @options.advanced_typecasting,
+        @options.log_enabled,
+        @options.log_level
       )
 
       definition_xml = Nokogiri::XML(definition)
