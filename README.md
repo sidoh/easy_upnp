@@ -166,6 +166,8 @@ There are two ways you can subscribe to events with easy_upnp:
 
 In the case of (2), easy_upnp behind the scenes starts a WEBrick HTTP server, which calls the provided callback whenever it receives an HTTP `NOTIFY` request. 
 
+Because event subscriptions expire, easy_upnp starts a background thread to renew the subscription on an interval.
+
 #### Calling URLs
 
 To add a URL to be called on events:
