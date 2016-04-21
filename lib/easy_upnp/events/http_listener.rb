@@ -1,7 +1,7 @@
 require 'webrick'
 require 'thread'
 
-require_relative '../options_base'
+require 'easy_upnp/events/event_parser'
 
 module EasyUpnp
   class HttpListener
@@ -15,8 +15,10 @@ module EasyUpnp
         # interfaces.
         bind_address: '0.0.0.0',
 
-        # By default, event callback just prints the request body
-        callback: ->(request) { puts request.body }
+        # By default, event callback just prints the changed state vars
+        callback: ->(state_vars) {
+          puts state_vars.inspect
+        }
       }
 
       def initialize(options)
@@ -67,10 +69,11 @@ module EasyUpnp
   class NotifyServlet < WEBrick::HTTPServlet::AbstractServlet
     def initialize(_server, block)
       @callback = block
+      @parser = EasyUpnp::EventParser.new
     end
 
     def do_NOTIFY(request, response)
-      @callback.call(request)
+      @callback.call(@parser.parse(request.body))
     end
   end
 end
