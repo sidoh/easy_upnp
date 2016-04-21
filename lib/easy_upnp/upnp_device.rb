@@ -3,7 +3,7 @@ require 'nokogiri'
 require 'open-uri'
 require 'savon'
 
-require_relative 'control_point/device_control_point'
+require 'easy_upnp/control_point/device_control_point'
 
 module EasyUpnp
   class UpnpDevice

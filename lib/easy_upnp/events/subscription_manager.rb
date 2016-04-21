@@ -1,5 +1,3 @@
-require_relative '../options_base'
-
 module EasyUpnp
   class Options < EasyUpnp::OptionsBase
     DEFAULTS = {

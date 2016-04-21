@@ -2,7 +2,7 @@ require 'socket'
 require 'ipaddr'
 require 'timeout'
 
-require_relative 'upnp_device'
+require 'easy_upnp/upnp_device'
 
 module EasyUpnp
   class SsdpSearcher

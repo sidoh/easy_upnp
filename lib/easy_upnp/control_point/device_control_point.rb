@@ -2,15 +2,13 @@ require 'nokogiri'
 require 'open-uri'
 require 'nori'
 
-require_relative '../options_base'
+require 'easy_upnp/validator_provider'
+require 'easy_upnp/client_wrapper'
+require 'easy_upnp/service_method'
 
-require_relative 'validator_provider'
-require_relative 'client_wrapper'
-require_relative 'service_method'
-
-require_relative '../events/event_client'
-require_relative '../events/http_listener'
-require_relative '../events/subscription_manager'
+require 'easy_upnp/events/event_client'
+require 'easy_upnp/events/http_listener'
+require 'easy_upnp/events/subscription_manager'
 
 module EasyUpnp
   class DeviceControlPoint

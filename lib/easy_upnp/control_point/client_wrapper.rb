@@ -1,5 +1,3 @@
-require_relative '../options_base'
-
 module EasyUpnp
   class ClientWrapper
     def initialize(endpoint,

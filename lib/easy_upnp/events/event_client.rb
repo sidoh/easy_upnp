@@ -1,7 +1,5 @@
 require 'net/http'
 
-require_relative '../options_base'
-
 module EasyUpnp
   class EventClient
     class SubscriptionError < StandardError; end

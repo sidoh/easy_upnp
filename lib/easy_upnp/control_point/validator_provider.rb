@@ -1,4 +1,4 @@
-require_relative 'argument_validator'
+require 'easy_upnp/control_point/argument_validator'
 
 module EasyUpnp
   module ValidatorProvider
