@@ -203,7 +203,12 @@ If you don't want to have to set up an HTTP endpoint to listen to events, you ca
 
 ```ruby
 # Parse and print the XML body of the request
-callback = ->(request) { puts Nokogiri::XML(request.body).to_xml }
+callback = ->(state_vars) do
+  state_vars.map do |var, value|
+    puts "#{var} ==>"
+    puts Nokogiri::XML(value).to_xml
+  end
+end
 manager = service.on_event(callback)
 
 # End the subscription and shut down the internal HTTP server
@@ -211,6 +216,20 @@ manager.unsubscribe
 
 # This will start a new HTTP server and start a new subscription
 manager.subscribe
+```
+
+Here's an example of some output from the above callback:
+
+```
+LastChange ==>
+<?xml version="1.0"?>
+<Event xmlns="urn:schemas-upnp-org:metadata-1-0/RCS/">
+  <InstanceID val="0">
+    <PresetNameList val="FactoryDefaults"/>
+    <Mute val="0" channel="Master"/>
+    <Volume val="20" channel="Master"/>
+  </InstanceID>
+</Event>
 ```
 
 While the default configurations are probably fine for most situations, you can configure both the internal HTTP server and the subscription manager when you call `on_event` by passing a configuration block:
