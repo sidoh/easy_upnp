@@ -2,9 +2,9 @@ require 'nokogiri'
 require 'open-uri'
 require 'nori'
 
-require 'easy_upnp/validator_provider'
-require 'easy_upnp/client_wrapper'
-require 'easy_upnp/service_method'
+require 'easy_upnp/control_point/validator_provider'
+require 'easy_upnp/control_point/client_wrapper'
+require 'easy_upnp/control_point/service_method'
 
 require 'easy_upnp/events/event_client'
 require 'easy_upnp/events/http_listener'
