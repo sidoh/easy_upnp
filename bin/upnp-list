@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 require 'optparse'
-require 'easy_upnp/ssdp_searcher'
+require 'easy_upnp'
 
 DEFAULT_ST = 'ssdp:all'
 
