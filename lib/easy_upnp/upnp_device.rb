@@ -7,7 +7,7 @@ require 'easy_upnp/control_point/device_control_point'
 
 module EasyUpnp
   class UpnpDevice
-    attr_reader :uuid, :name, :host
+    attr_reader :uuid, :host
 
     def initialize(uuid, service_definitions)
       @uuid = uuid
@@ -31,6 +31,10 @@ module EasyUpnp
           end
 
       UpnpDevice.new(uuid, service_definitions)
+    end
+
+    def host
+      @host ||= URI.parse(@service_definitions.first[:location]).host
     end
 
     def device_name
