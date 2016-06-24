@@ -24,7 +24,7 @@ gem 'easy_upnp'
 The `search` method takes one argument -- the "search target". This controls a header sent in the SSDP packet which affects the devices that respond to the search query. You can use `'ssdp:all'` to specify that all devices should respond.
 
 ```ruby
-require 'easy_upnp/ssdp_searcher'
+require 'easy_upnp'
 
 searcher = EasyUpnp::SsdpSearcher.new 
 devices = searcher.search 'ssdp:all'
