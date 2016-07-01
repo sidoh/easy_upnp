@@ -37,7 +37,7 @@ if devices.any?
   devices.each do |device|
     name = device.device_name rescue '*** Error fetching name ***'
 
-    printf "%30s %45s ", device.device_name, device.uuid
+    printf "%30s %45s ", name, device.uuid
 
     services = device.all_services
     if services.any?
