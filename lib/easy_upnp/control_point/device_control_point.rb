@@ -20,7 +20,8 @@ module EasyUpnp
         validate_arguments: false,
         log_enabled: true,
         log_level: :error,
-        call_options: {}
+        call_options: {},
+        cookies: nil
       }
 
       def initialize(o = {}, &block)
@@ -54,7 +55,8 @@ module EasyUpnp
         @options.call_options,
         @options.advanced_typecasting,
         @options.log_enabled,
-        @options.log_level
+        @options.log_level,
+        @options.cookies
       )
 
       definition_xml = Nokogiri::XML(definition)

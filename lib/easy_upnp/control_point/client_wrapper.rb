@@ -5,7 +5,8 @@ module EasyUpnp
                    call_options,
                    advanced_typecasting,
                    log_enabled,
-                   log_level)
+                   log_level,
+                   cookies)
 
       # For some reason was not able to pass these options in the config block
       # in Savon 2.11
@@ -31,6 +32,7 @@ module EasyUpnp
       @urn = urn
       @call_options = call_options
       @advanced_typecasting = advanced_typecasting
+      @cookies = cookies
     end
 
     def call(action_name, args)
@@ -40,6 +42,13 @@ module EasyUpnp
               :'xmlns:u' => @urn
           },
       }.merge(@call_options)
+      
+      if !@cookies.nil?
+        attrs = attrs.merge(
+          cookies: HTTPI::Cookie.new(@cookies)
+        )
+      end
+      
       advanced_typecasting = @advanced_typecasting
 
       response = @client.call(action_name, attrs) do

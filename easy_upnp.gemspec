@@ -15,6 +15,7 @@ Gem::Specification.new do |gem|
   gem.add_dependency 'rake'
   gem.add_dependency 'savon', '~> 2.11'
   gem.add_dependency 'nokogiri', '~> 1.6'
+  gem.add_dependency 'rubyntlm', '~> 0.3'
 
   ignores  = File.readlines(".gitignore").grep(/\S+/).map(&:chomp)
   dotfiles = %w[.gitignore]
