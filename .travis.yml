@@ -1,0 +1,21 @@
+sudo: false
+language: ruby
+rvm:
+- 2.0
+- 2.1
+- 2.2
+- 2.3
+- 2.4
+- 2.4.2
+- ruby-head
+matrix:
+  allow_failures:
+  - rvm: ruby-head
+deploy:
+  provider: rubygems
+  api_key:
+    secure: IG82e1JlJNhkZzWh7E+zSlzYzD91Mhsc6nexbKXKVmdr6590GMYquxiwVxxyWXk5c3FV7hDHkPZZ3u8o3glOwG7bhQrvaALwOGQCCP9KgOry6eVXhOmANBCmdCsvA9ARlp67aKhrdvs1tMYrilzqXJQqXIJN76wRX62VlHFfr5Vn0MrWriPQsJNj9RQ0IoSXvxQvEUCQyfyPQV9mf3dyctJzojisUf4bC9Zn7DgRXKFYiEOV9CUVahOS49krWmKUQqUOrCMYuxKtNln86VMYkGgXbi7k5QNHaRyEZgT8YVDRCEWCtLa6lsmPQL6yvg0C6FkYP944BJTJGzPy59vq0vuHmnVDQ2y9YSly4hcewbNLiOiwbvDo85+WqoYs80EyU9rEI7UHtmwZCYy/hzYhRGIUMFUZrTM4Cr0rxwPluyqKP8+UBAJb5jtObbcHHt42OzF0XZelYm5qzvx8ypPuddDBsQe/A0Uj7mqJu6clgMVnhm4IcS5m61q+1UFGWZCRq/IIOVG+Ak4LwyJSIaSi6f2051WC1sav1dyjHtxbvLXNFg1wVsMlJS4eUhPoToo8S95gNrMw+s1bhChrVI+Rv1uPzlSHqGmNGx08SgBbLjyOp5KOLk7TP0WDUbyTYaEpv+yZw7kNw4K5/jrQykLtpNp2s2ETTjhp/xPH19Wi0pE=
+  gem: easy_upnp
+  on:
+    tags: true
+    repo: sidoh/easy_upnp
