@@ -1,6 +1,8 @@
 # easy_upnp
 A super simple UPnP control point client for Ruby
 
+[![Gem Version][shield-gem]][info-gem] [![Build Status][shield-travis]][info-travis]
+
 ## Installing
 
 easy_upnp is available on [Rubygems](https://rubygems.org). You can install it with:
@@ -249,3 +251,12 @@ manager = service.on_event(callback) do |c|
   end
 end
 ```
+
+[info-gem]:   https://rubygems.org/gems/easy_upnp
+[shield-gem]: https://img.shields.io/gem/v/easy_upnp.svg
+
+[info-travis]:   https://travis-ci.org/sidoh/easy_upnp
+[shield-travis]: https://img.shields.io/travis/sidoh/easy_upnp.svg
+
+[info-coveralls]:   https://coveralls.io/github/sidoh/easy_upnp
+[shield-coveralls]: https://img.shields.io/coveralls/github/sidoh/easy_upnp.svg
