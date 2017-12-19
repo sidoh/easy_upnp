@@ -17,6 +17,8 @@ Gem::Specification.new do |gem|
   gem.add_dependency 'nokogiri', '~> 1.8'
   gem.add_dependency 'rubyntlm', '~> 0.3'
 
+  gem.required_ruby_version = '>= 2.1.0'
+
   ignores  = File.readlines(".gitignore").grep(/\S+/).map(&:chomp)
   dotfiles = %w[.gitignore]
 
