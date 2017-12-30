@@ -1,7 +1,7 @@
 require 'webrick'
 require 'thread'
 
-require 'easy_upnp/events/event_parser'
+require 'easy_upnp/events/event_parsers'
 
 module EasyUpnp
   class HttpListener
@@ -18,7 +18,11 @@ module EasyUpnp
         # By default, event callback just prints the changed state vars
         callback: ->(state_vars) {
           puts state_vars.inspect
-        }
+        },
+
+        # Parses event bodies.  By default parse the XML into a hash.  Use
+        # EasyUpnp::NoOpEventParser to skip parsing
+        event_parser: EasyUpnp::DefaultEventParser
       }
 
       def initialize(options)
@@ -37,7 +41,7 @@ module EasyUpnp
           AccessLog: [],
           BindAddress: @options.bind_address
         )
-        @server.mount('/', NotifyServlet, @options.callback)
+        @server.mount('/', NotifyServlet, @options.callback, @options.event_parser.new)
       end
 
       @listen_thread ||= Thread.new do
@@ -67,9 +71,9 @@ module EasyUpnp
   end
 
   class NotifyServlet < WEBrick::HTTPServlet::AbstractServlet
-    def initialize(_server, block)
+    def initialize(_server, block, parser)
       @callback = block
-      @parser = EasyUpnp::EventParser.new
+      @parser = parser
     end
 
     def do_NOTIFY(request, response)

@@ -1,7 +1,6 @@
-# easy_upnp
-A super simple UPnP control point client for Ruby
+# easy_upnp [![Gem Version][shield-gem]][info-gem] [![Build Status][shield-travis]][info-travis]
 
-[![Gem Version][shield-gem]][info-gem] [![Build Status][shield-travis]][info-travis]
+A super simple UPnP control point client for Ruby
 
 ## Installing
 
@@ -28,7 +27,7 @@ The `search` method takes one argument -- the "search target". This controls a h
 ```ruby
 require 'easy_upnp'
 
-searcher = EasyUpnp::SsdpSearcher.new 
+searcher = EasyUpnp::SsdpSearcher.new
 devices = searcher.search 'ssdp:all'
 ```
 
@@ -81,8 +80,8 @@ By default, logs will be printed to `$stdout` at the `:error` level. To change t
 
 ```ruby
 service = client.service(
-  'urn:schemas-upnp-org:service:ContentDirectory:1', 
-  log_enabled: true, 
+  'urn:schemas-upnp-org:service:ContentDirectory:1',
+  log_enabled: true,
   log_level: :info
 )
 
@@ -166,7 +165,7 @@ There are two ways you can subscribe to events with easy_upnp:
 1. Registering a custom HTTP endpoint.
 2. Providing a callback `lambda` or `Proc` which is called each time an event is fired.
 
-In the case of (2), easy_upnp behind the scenes starts a WEBrick HTTP server, which calls the provided callback whenever it receives an HTTP `NOTIFY` request. 
+In the case of (2), easy_upnp behind the scenes starts a WEBrick HTTP server, which calls the provided callback whenever it receives an HTTP `NOTIFY` request.
 
 Because event subscriptions expire, easy_upnp starts a background thread to renew the subscription on an interval.
 
@@ -179,7 +178,7 @@ To add a URL to be called on events:
 # URL will be called with HTTP NOTIFY requests from the service.
 manager = service.add_event_callback('http://myserver/path/to/callback')
 
-# The object that's returned allows you to manage the event subscription. To 
+# The object that's returned allows you to manage the event subscription. To
 # cancel the subscription, for example:
 manager.unsubscribe
 
@@ -201,7 +200,7 @@ end
 
 #### Calling ruby code
 
-If you don't want to have to set up an HTTP endpoint to listen to events, you can have easy_upnp do it for you. The `on_event` starts an internal HTTP server on an ephemeral port behind the scenes and triggers the provided callback each time a request is recieved. 
+If you don't want to have to set up an HTTP endpoint to listen to events, you can have easy_upnp do it for you. The `on_event` starts an internal HTTP server on an ephemeral port behind the scenes and triggers the provided callback each time a request is recieved.
 
 ```ruby
 # Parse and print the XML body of the request
@@ -241,8 +240,11 @@ manager = service.on_event(callback) do |c|
   c.configure_http_listener do |l|
     l.listen_port = 8888
     l.bind_address = '192.168.1.100'
+
+    # Don't parse XML body, pass raw contents to callback
+    l.event_parser = EasyUpnp::NoOpEventParser
   end
-  
+
   c.configure_subscription_manager do |m|
     m.requested_timeout = 1800
     m.resubscription_interval_buffer = 60
