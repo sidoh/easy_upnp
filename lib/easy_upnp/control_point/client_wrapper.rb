@@ -42,13 +42,13 @@ module EasyUpnp
               :'xmlns:u' => @urn
           },
       }.merge(@call_options)
-      
+
       if !@cookies.nil?
         attrs = attrs.merge(
           cookies: HTTPI::Cookie.new(@cookies)
         )
       end
-      
+
       advanced_typecasting = @advanced_typecasting
 
       response = @client.call(action_name, attrs) do

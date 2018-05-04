@@ -58,6 +58,7 @@ module EasyUpnp
     class TypeValidator
       # Valid UPnP types for each ruby class
       RUBY_TYPE_TO_UPNP_TYPE = {
+        Array: %w{list},
         Float: %w{r4 r8 number fixed.14.4 float},
         Integer: %w{ui1 ui2 ui4 i1 i2 i4 int},
         String: %w{char string bin.base64 bin.hex uri uuid},
