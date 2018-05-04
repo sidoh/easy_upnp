@@ -1,5 +1,5 @@
 require 'uri'
-require 'nokogiri'
+require 'nori'
 require 'open-uri'
 require 'savon'
 
@@ -37,8 +37,14 @@ module EasyUpnp
       @host ||= URI.parse(@service_definitions.first[:location]).host
     end
 
+    def description
+      @description ||= fetch_description
+    end
+
+    # @deprecated Use {#description['friendlyName']} instead of this method.
+    #   It will be removed in the next major release.
     def device_name
-      @device_name ||= fetch_device_name
+      @device_name ||= description['friendlyName']
     end
 
     def all_services
@@ -65,16 +71,14 @@ module EasyUpnp
 
     private
 
-    def fetch_device_name
+    # @return [Hash]
+    def fetch_description
       if all_services.empty?
-        raise RuntimeError, "Couldn't resolve device name because no endpoints are defined"
+        raise RuntimeError, "Couldn't resolve device description because no endpoints are defined"
       end
 
-      document = open(service_definition(all_services.first)[:location]) { |f| f.read }
-      xml = Nokogiri::XML(document)
-      xml.remove_namespaces!
-
-      xml.xpath("//device/friendlyName").text
+      location = service_definition(all_services.first)[:location]
+      Nori.new.parse(open(location) { |f| f.read })['root']['device']
     end
   end
 end
