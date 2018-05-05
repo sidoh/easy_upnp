@@ -55,6 +55,22 @@ service.GetSystemUpdateID
 # => {:Id=>"207"}
 ```
 
+#### Get information about a specific device
+
+```ruby
+device.description
+# => { ... } # all available information
+
+device.description['friendlyName']
+# => "WeMo Switch"
+
+device.description['deviceType']
+# => "urn:Belkin:device:controllee:1"
+
+device.description['serialNumber']
+# => "221520K1100836"
+```
+
 ## Static client construction
 
 After you've constructed a client (`DeviceControlPoint`), you probably don't want to have to use SSDP to construct it again the next time you use it. `DeviceControlPoint` is equipped with `#to_params` and `#from_params` methods to make this easy.
